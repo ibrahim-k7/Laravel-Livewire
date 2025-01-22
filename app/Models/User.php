@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
@@ -80,7 +81,7 @@ class User extends Authenticatable
 
     public function hasPermission($key)
     {
-        return $this->role->permission->contains('key',$key);
+        return $this->role->permission->contains('key', $key);
     }
 
     public function country()
@@ -92,4 +93,18 @@ class User extends Authenticatable
     {
         return $this->belongsTo(City::class);
     }
+
+    public function scopeSearch($query, $term)
+    {
+        $query->where(function ($query) use ($term) {
+            $query->where('username', 'like', "%$term%")
+                ->orWhere('name', 'like', "%$term%")
+                ->orWhere('email', 'like', "%$term%");
+        });
+    }
+
+    public function isOnline(){
+        return Cache::has('user-is-online' .$this->id);
+    }
+
 }
